@@ -153,12 +153,12 @@ def main_downloader(audio_or_video):
             exit()
         elif url_string == "help":
             print("Enter: 'stop' --> exit function.\n"+
-            "Enter a YT-URL --> download YT-Video as mp3 \n"+
+            "Enter a YT-URL --> download YT-Video \n"+
             "Enter: 'playlist' if the link is a Playlist and 'no-playlist' to switch back\n"+
             "Enter: 'playlist-spec' --> settings to download specific videos of Playlist")
-            if audio_or_video == "audio":
+            if audio_or_video == "a":
                 print("Enter: 'set-Aformat' --> you can use: mp3, wav, m4a, opus, aac, flac")
-            elif audio_or_video == "video":
+            elif audio_or_video == "v":
                 print("Enter: 'set-Vformat' --> you can use: mp4, webm, 3gp")
         else:
             print("This is not a valid Input")

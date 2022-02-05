@@ -12,7 +12,7 @@ Start:
 =====
 - First you have to enter if you want to download Audio 'a' or Video 'v'
 - Next you have to enter a name that will be the download target folder or just hit Enter --> then will save in .\\Output
-- After you can just enter URL to download or use the commands below
+- After you can just enter URL to download or use the commands below over and over again
 
 All commands:
 =============
