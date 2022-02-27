@@ -4,6 +4,7 @@ from subprocess import PIPE, Popen
 from time import sleep
 
 
+
 def main_downloader(audio_or_video):
 
     global url_string
@@ -30,25 +31,25 @@ def main_downloader(audio_or_video):
         global video_format
 
         print("start downloader")
-        p = subprocess.Popen("yt-dlp -e --skip-download  --get-title "+ url_string, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #p = subprocess.Popen("yt-dlp -e --skip-download  --get-title "+ url_string, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        download_title = str(p.communicate())[3:-9]
+        #download_title = str(p.communicate())[3:-9]
 
         
         if audio_or_video == "a":
-            #print(audio_format)
             if audio_format == "mp3" or audio_format == "m4a" or audio_format == "opus" or audio_format == "flac":
                 audio_format = audio_format + " --embed-thumbnail"
 
-                subprocess.call("yt-dlp -x "+playlist+" "+playlistsettings+" --audio-quality 192 --audio-format "+audio_format+" --add-metadata --output "+destination+"%(title)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
+            subprocess.call("yt-dlp -x "+playlist+" "+playlistsettings+" --audio-quality 192 --audio-format "+audio_format+" --add-metadata --output "+destination+"%(title)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
         elif audio_or_video == "v":
+            print(video_format)
             if video_format == "webm":
                 subprocess.call("yt-dlp -f bestvideo+bestaudio "+playlist+" "+playlistsettings+"  --add-metadata  -o "+destination+"%(title)s.f%(format_id)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
             else:
                 subprocess.call("yt-dlp -f bestvideo+bestaudio "+playlist+" "+playlistsettings+"  --add-metadata  --format "+video_format+" -o "+destination+"%(title)s.f%(format_id)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
-        print("finished downloading id: "+str(id)+" title: "+ download_title + "\r")
+        #print("finished downloading id: "+str(id)+" title: "+ download_title + "\r")
 
     def main():
         global url_string
@@ -57,6 +58,7 @@ def main_downloader(audio_or_video):
         global playlistsettings
         global audio_format
         global video_format
+        global audio_or_video
 
         wrong_input = "try again bad input"
 
@@ -162,6 +164,7 @@ def main_downloader(audio_or_video):
                 print("Enter: 'set-Vformat' --> you can use: mp4, webm, 3gp")
         else:
             print("This is not a valid Input")
+            main()
         main()
         
     #declare
