@@ -57,8 +57,7 @@ def main_downloader(audio_or_video):
         global destination
         global playlistsettings
         global audio_format
-        global video_format
-        global audio_or_video
+        global video_formata
 
         wrong_input = "try again bad input"
 
@@ -69,6 +68,9 @@ def main_downloader(audio_or_video):
             thread = Thread(target=downloader)
             thread.start()
             sleep(1)
+
+        if url_string == "restart":
+            starter()
 
         if url_string == "playlist":
             playlist = '--yes-playlist'
@@ -157,7 +159,8 @@ def main_downloader(audio_or_video):
             print("Enter: 'stop' --> exit function.\n"+
             "Enter a YT-URL --> download YT-Video \n"+
             "Enter: 'playlist' if the link is a Playlist and 'no-playlist' to switch back\n"+
-            "Enter: 'playlist-spec' --> settings to download specific videos of Playlist")
+            "Enter: 'playlist-spec' --> settings to download specific videos of Playlist\n"+
+            "Enter: 'restart' --> restarts script from complete beginning")
             if audio_or_video == "a":
                 print("Enter: 'set-Aformat' --> you can use: mp3, wav, m4a, opus, aac, flac")
             elif audio_or_video == "v":
