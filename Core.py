@@ -1,4 +1,4 @@
-import subprocess, sys, re, os, threading
+import subprocess, glob, sys, re, os, threading, shutil
 from threading import Thread
 from subprocess import PIPE, Popen
 from time import sleep
@@ -40,13 +40,22 @@ def main_downloader(audio_or_video):
             if audio_format == "mp3" or audio_format == "m4a" or audio_format == "opus" or audio_format == "flac":
                 audio_format = audio_format + " --embed-thumbnail"
 
-            subprocess.call("yt-dlp -x "+playlist+" "+playlistsettings+" --audio-quality 192 --audio-format "+audio_format+" --add-metadata --output "+destination+"%(title)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
+            subprocess.call("yt-dlp -x "+playlist+" "+playlistsettings+" --audio-quality 192 --audio-format "+audio_format+" --add-metadata --output "+"./Output/"+"%(title)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
         elif audio_or_video == "v":
             print(video_format)
             if video_format == "webm":
-                subprocess.call("yt-dlp -f bestvideo+bestaudio "+playlist+" "+playlistsettings+"  --add-metadata  -o "+destination+"%(title)s.f%(format_id)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
+                subprocess.call("yt-dlp -f bestvideo+bestaudio "+playlist+" "+playlistsettings+"  --add-metadata  -o "+"./Output/"+"%(title)s.f%(format_id)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
             else:
-                subprocess.call("yt-dlp -f bestvideo+bestaudio "+playlist+" "+playlistsettings+"  --add-metadata  --format "+video_format+" -o "+destination+"%(title)s.f%(format_id)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
+                subprocess.call("yt-dlp -f bestvideo+bestaudio "+playlist+" "+playlistsettings+"  --add-metadata  --format "+video_format+" -o "+"./Output/"+"%(title)s.f%(format_id)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
+
+        list_of_files = glob.glob('./Output/*') # * means all if need specific format then *.csv
+        latest_file = max(list_of_files, key=os.path.getctime)
+
+        if os.path.isdir(destination) == True:
+            shutil.move(latest_file, destination+str(latest_file[9:]))
+        else:
+            os.mkdir(destination)
+            shutil.move(latest_file, destination+str(latest_file[9:]))
 
 
         #print("finished downloading id: "+str(id)+" title: "+ download_title + "\r")
@@ -177,13 +186,11 @@ def main_downloader(audio_or_video):
     video_format = "mp4"
     #declare END
     #Declare User-preferences
-    destination = "./"+str(input('Enter relative path or enter: "yes" to enter a full path \nNO Space!! \n >> ') or "Output")+"/"
+    destination = "./"+str(input('Enter relative path or enter: "yes" to enter a full path \n >> ') or "Output")+"/"
     if destination == "./yes/":
         destination = str(input("Enter full path >>"))+"/"
-    #destination = "./Output/"
     #Declare User-preferences END
-
-
+    #print(destination)
     print("Enter: 'help' for all Functions.")
     main()
 
