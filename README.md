@@ -22,6 +22,7 @@ All commands:
     'playlist-spec' --> settings to download list and specific videos of playlist
     'set-Aformat' --> change filetypoutput for Audio. Standard is mp3
     'set-Vformat' --> change filetypoutput for Video. Standard is mp4
+    'restart' --> restarts script from complete beginning
 
 File-Formats:
 =============
