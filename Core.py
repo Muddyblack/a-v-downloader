@@ -14,6 +14,7 @@ def main_downloader(audio_or_video):
     global audio_format
     global video_format
 
+    # regex needed to watch if input is a weblink
     regex = re.compile(
             r'^(?:http|ftp)s?://' # http:// or https://
             r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
@@ -31,34 +32,42 @@ def main_downloader(audio_or_video):
         global video_format
 
         print("start downloader")
-        #p = subprocess.Popen("yt-dlp -e --skip-download  --get-title "+ url_string, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        #download_title = str(p.communicate())[3:-9]
-
         
         if audio_or_video == "a":
+            #add thumbnail where possible
             if audio_format == "mp3" or audio_format == "m4a" or audio_format == "opus" or audio_format == "flac":
                 audio_format = audio_format + " --embed-thumbnail"
-
+            #download 
             subprocess.call("yt-dlp -x "+playlist+" "+playlistsettings+" --audio-quality 192 --audio-format "+audio_format+" --add-metadata --output "+"./Output/"+"%(title)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
+            #reset audio_format for a later filemove check
+            audio_format = audio_format.replace(" --embed-thumbnail", "")
         elif audio_or_video == "v":
-            print(video_format)
+            #yt-dlp can't recognize webm as format it is just standard so needed to differ
             if video_format == "webm":
                 subprocess.call("yt-dlp -f bestvideo+bestaudio "+playlist+" "+playlistsettings+"  --add-metadata  -o "+"./Output/"+"%(title)s.f%(format_id)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
             else:
                 subprocess.call("yt-dlp -f bestvideo+bestaudio "+playlist+" "+playlistsettings+"  --add-metadata  --format "+video_format+" -o "+"./Output/"+"%(title)s.f%(format_id)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
 
-        list_of_files = glob.glob('./Output/*') # * means all if need specific format then *.csv
-        latest_file = max(list_of_files, key=os.path.getctime)
+        # method required because yt-dlp doesn't accept space key in destinationpath
+        def get_latest_file_name():
+            global latest_file
+            global latest_file_ending
 
+            if audio_or_video == "a":
+                list_of_files = glob.glob('./Output/*.'+audio_format)
+            elif audio_or_video == "v":
+                list_of_files = glob.glob('./Output/*.'+video_format)
+
+            latest_file = max(list_of_files, key=os.path.getctime)
+
+        get_latest_file_name()
+
+        #check if destination already exists/create it and move file to destination
         if os.path.isdir(destination) == True:
             shutil.move(latest_file, destination+str(latest_file[9:]))
         else:
             os.mkdir(destination)
             shutil.move(latest_file, destination+str(latest_file[9:]))
-
-
-        #print("finished downloading id: "+str(id)+" title: "+ download_title + "\r")
 
     def main():
         global url_string
@@ -190,7 +199,6 @@ def main_downloader(audio_or_video):
     if destination == "./yes/":
         destination = str(input("Enter full path >>"))+"/"
     #Declare User-preferences END
-    #print(destination)
     print("Enter: 'help' for all Functions.")
     main()
 
