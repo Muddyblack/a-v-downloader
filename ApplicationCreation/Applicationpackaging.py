@@ -72,7 +72,6 @@ shutil.rmtree(""+file_path+"\\AudioAndVideoDownloader\\dist")
 shutil.rmtree(""+file_path+"\\AudioAndVideoDownloader\\build")
 
 copyfile(".\\README.md", application_folder_dir+"\\README.md")
-copyfile(".\\yt-dlp.exe", application_folder_dir+"\\yt-dlp.exe")
 
 
 try:
