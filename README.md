@@ -10,9 +10,9 @@
 **********************************************************************************
 Start:
 =====
-- First you have to enter if you want to download Audio 'a' or Video 'v'
-- Next you have to enter a name that will be the download target folder or just hit Enter --> then will save in .\\Output
-- After you can just enter URL to download or use the commands below over and over again
+- First you have to enter 'a' if you want to download Audio or 'v' for Videos
+- Next you have to enter a name that will be the download target folder or just hit Enter --> then it will save in ".\\Output"
+- After you can just enter the URL to download or use the commands below over and over again
 
 All commands:
 =============
@@ -20,9 +20,9 @@ All commands:
     'stop'--> exit function
     'playlist' --> activates the possibillity to download Playlists --> 'no-playlist' will switch back to one video download
     'playlist-spec' --> settings to download list and specific videos of playlist
-    'set-Aformat' --> change filetypoutput for Audio. Standard is mp3
-    'set-Vformat' --> change filetypoutput for Video. Standard is mp4
-    'restart' --> restarts script from complete beginning
+    'set-Aformat' --> change filetypoutput for Audio || Standard is mp3
+    'set-Vformat' --> change filetypoutput for Video || Standard is mp4
+    'restart' --> restarts script from scratch
 
 File-Formats:
 =============

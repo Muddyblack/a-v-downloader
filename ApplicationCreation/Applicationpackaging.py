@@ -24,7 +24,7 @@ def read_file(input_path):
 def write_encrpyted_file(file_name):
     file_text = read_file(".\\"+file_name)
 
-    with open(file_path+"\\"+file_name, 'w') as f: 
+    with open(f"{file_path}\\{file_name}", 'w') as f: 
         f.write("from cryptography.fernet import Fernet\n"+
                 "import base64\n\n"
                 'code = b"""\n')
@@ -50,26 +50,25 @@ file_path = os.getcwd()+"\\ApplicationCreation"
 write_encrpyted_file("Core.py")
 
 
-application_folder_dir = file_path+"\\AudioAndVideoDownloader"
+application_folder_dir = f"{file_path}\\AudioAndVideoDownloader"
 
 does_applicationfolder_exist = os.path.isdir(application_folder_dir)
 
 if os.path.isdir(application_folder_dir) == True:
     shutil.rmtree(application_folder_dir)
     os.mkdir(application_folder_dir)
-    
 else:
     os.mkdir(application_folder_dir)
 
 
-subprocess.call("python -m PyInstaller --clean --noconsole "+file_path+"\\Downloader.spec", cwd=application_folder_dir)
+subprocess.call(f"python -m PyInstaller --clean {file_path}\\Downloader.spec", cwd=application_folder_dir)
 
 
 copytree(r""+file_path+"\AudioAndVideoDownloader\dist",application_folder_dir)
 
 
-shutil.rmtree(""+file_path+"\\AudioAndVideoDownloader\\dist")
-shutil.rmtree(""+file_path+"\\AudioAndVideoDownloader\\build")
+shutil.rmtree(f"{file_path}\\AudioAndVideoDownloader\\dist")
+shutil.rmtree(f"{file_path}\\AudioAndVideoDownloader\\build")
 
 copyfile(".\\README.md", application_folder_dir+"\\README.md")
 

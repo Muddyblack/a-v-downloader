@@ -1,4 +1,4 @@
-import subprocess, glob, sys, re, os, threading, shutil
+import subprocess, sys, re, os, threading, shutil
 from threading import Thread
 from subprocess import PIPE, Popen
 from time import sleep
@@ -6,7 +6,6 @@ from time import sleep
 
 
 def main_downloader(audio_or_video):
-
     global url_string
     global playlist
     global destination
@@ -32,42 +31,46 @@ def main_downloader(audio_or_video):
         global video_format
 
         print("start downloader")
+
+        #get the name of the file to change location later
+        def get_file_name():
+            global filename 
+
+            filename = str(subprocess.run("youtube-dl --no-playlist --get-title "+ url_string, capture_output=True).stdout)
+            filename = str(filename).replace("b'", "").replace("\\n'", "")
         
+        d = threading.Thread(name='daemon', target=get_file_name)
+        d.daemon = True
+        d.start()
+        
+        #start download sequence
         if audio_or_video == "a":
             #add thumbnail where possible
             if audio_format == "mp3" or audio_format == "m4a" or audio_format == "opus" or audio_format == "flac":
                 audio_format = audio_format + " --embed-thumbnail"
             #download 
-            subprocess.call("yt-dlp -x "+playlist+" "+playlistsettings+" --audio-quality 192 --audio-format "+audio_format+" --add-metadata --output "+"./Output/"+"%(title)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
+            subprocess.call(f"yt-dlp -x {playlist} {playlistsettings} --audio-quality 192 --audio-format {audio_format} --add-metadata --output ./Output/%(title)s.%(ext)s {url_string}", creationflags=subprocess.CREATE_NEW_CONSOLE)
             #reset audio_format for a later filemove check
             audio_format = audio_format.replace(" --embed-thumbnail", "")
         elif audio_or_video == "v":
             #yt-dlp can't recognize webm as format it is just standard so needed to differ
             if video_format == "webm":
-                subprocess.call("yt-dlp -f bestvideo+bestaudio "+playlist+" "+playlistsettings+"  --add-metadata  -o "+"./Output/"+"%(title)s.f%(format_id)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
+                subprocess.call(f"yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings}  --add-metadata  -o ./Output/%(title)s.f%(format_id)s.%(ext)s {url_string}", creationflags=subprocess.CREATE_NEW_CONSOLE)
             else:
-                subprocess.call("yt-dlp -f bestvideo+bestaudio "+playlist+" "+playlistsettings+"  --add-metadata  --format "+video_format+" -o "+"./Output/"+"%(title)s.f%(format_id)s.%(ext)s "+ url_string, creationflags=subprocess.CREATE_NEW_CONSOLE)
+                subprocess.call(f"yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings}  --add-metadata  --format {video_format} -o ./Output/%(title)s.f%(format_id)s.%(ext)s {url_string}", creationflags=subprocess.CREATE_NEW_CONSOLE)
 
-        # method required because yt-dlp doesn't accept space key in destinationpath
-        def get_latest_file_name():
-            global latest_file
-            global latest_file_ending
-
-            if audio_or_video == "a":
-                list_of_files = glob.glob('./Output/*.'+audio_format)
-            elif audio_or_video == "v":
-                list_of_files = glob.glob('./Output/*.'+video_format)
-
-            latest_file = max(list_of_files, key=os.path.getctime)
-
-        get_latest_file_name()
+        #required because yt-dlp doesn't accept space key in destinationpath
+        if audio_or_video == "a":
+            filepath = f'./Output/{filename}.{audio_format}'
+        elif audio_or_video == "v":
+            filepath = f'./Output/{filename}.{video_format}'
 
         #check if destination already exists/create it and move file to destination
         if os.path.isdir(destination) == True:
-            shutil.move(latest_file, destination+str(latest_file[9:]))
+            shutil.move(filepath, destination+str(filepath[9:]))
         else:
             os.mkdir(destination)
-            shutil.move(latest_file, destination+str(latest_file[9:]))
+            shutil.move(filepath, destination+str(filepath[9:]))
 
     def main():
         global url_string
@@ -109,7 +112,7 @@ def main_downloader(audio_or_video):
                         print(wrong_input)
                         playlist_list()
                     else:
-                        playlistsettings = "--playlist-start "+start+"--playlist-end NUMBER "+end
+                        playlistsettings = f"--playlist-start {start}--playlist-end NUMBER {end}"
             elif playlist_spec == "spec":
                 def special_match(strg, search=re.compile(r'[^0-9,-]').search):
                     return not bool(search(strg))
@@ -210,4 +213,5 @@ def starter():
     else:
         main_downloader(audio_or_video)   
 
+os.system('color 9')
 starter()
