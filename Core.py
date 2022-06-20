@@ -1,4 +1,10 @@
-import subprocess, sys, re, os, threading, shutil
+import sys
+sys.path.insert(0,".\Modules")
+
+from pytube import YouTube, Playlist
+
+import subprocess, threading
+import re, os, shutil
 from threading import Thread
 from subprocess import PIPE, Popen
 from time import sleep
@@ -22,55 +28,46 @@ def main_downloader(audio_or_video):
             r'(?::\d+)?' # optional port
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
-    def downloader():
-        global url_string
+    def create_downloader_code(url_string, is_it_mixer = False):
         global playlist
         global destination
         global playlistsettings
         global audio_format
         global video_format
 
-        print("start downloader")
+        if is_it_mixer == False:
+            playlist == "--no-playlist"
+            playlistsettings = ""
 
-        #get the name of the file to change location later
-        def get_file_name():
-            global filename 
+        print("set download code")
 
-            filename = str(subprocess.run("youtube-dl --no-playlist --get-title "+ url_string, capture_output=True).stdout)
-            filename = str(filename).replace("b'", "").replace("\\n'", "")
         
-        d = threading.Thread(name='daemon', target=get_file_name)
-        d.daemon = True
-        d.start()
-        
-        #start download sequence
+        filename = "%(title)s.%(ext)s"
+    
+        try:
+            yt = YouTube(url_string)
+
+            #artist = yt.metadata[0]['Artist']
+            title = yt.metadata[0]['Song']
+
+            filename = f"{title}.{audio_format}" #{artist} •
+            
+        except:
+            pass
+
         if audio_or_video == "a":
             #add thumbnail where possible
             if audio_format == "mp3" or audio_format == "m4a" or audio_format == "opus" or audio_format == "flac":
                 audio_format = audio_format + " --embed-thumbnail"
-            #download 
-            subprocess.call(f"yt-dlp -x {playlist} {playlistsettings} --audio-quality 192 --audio-format {audio_format} --add-metadata --output ./Output/%(title)s.%(ext)s {url_string}", creationflags=subprocess.CREATE_NEW_CONSOLE)
-            #reset audio_format for a later filemove check
-            audio_format = audio_format.replace(" --embed-thumbnail", "")
+            #codepiece
+            return f'yt-dlp -x {playlist} {playlistsettings} --audio-quality 192 --audio-format {audio_format} --add-metadata -o "{destination}{filename}" {url_string}'
         elif audio_or_video == "v":
             #yt-dlp can't recognize webm as format it is just standard so needed to differ
-            if video_format == "webm":
-                subprocess.call(f"yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings}  --add-metadata  -o ./Output/%(title)s.f%(format_id)s.%(ext)s {url_string}", creationflags=subprocess.CREATE_NEW_CONSOLE)
-            else:
-                subprocess.call(f"yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings}  --add-metadata  --format {video_format} -o ./Output/%(title)s.f%(format_id)s.%(ext)s {url_string}", creationflags=subprocess.CREATE_NEW_CONSOLE)
-
-        #required because yt-dlp doesn't accept space key in destinationpath
-        if audio_or_video == "a":
-            filepath = f'./Output/{filename}.{audio_format}'
-        elif audio_or_video == "v":
-            filepath = f'./Output/{filename}.{video_format}'
-
-        #check if destination already exists/create it and move file to destination
-        if os.path.isdir(destination) == True:
-            shutil.move(filepath, destination+str(filepath[9:]))
-        else:
-            os.mkdir(destination)
-            shutil.move(filepath, destination+str(filepath[9:]))
+            
+            if video_format != "webm":
+                v_format = f"--format {video_format}"
+            return f'yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings} {v_format} --add-metadata  -o "{destination}%(title)s.f%(format_id)s.%(ext)s" {url_string}' 
+                                                #{playlist} {playlistsettings}
 
     def main():
         global url_string
@@ -78,7 +75,7 @@ def main_downloader(audio_or_video):
         global destination
         global playlistsettings
         global audio_format
-        global video_formata
+        global video_format
 
         wrong_input = "try again bad input"
 
@@ -86,9 +83,48 @@ def main_downloader(audio_or_video):
         is_inputurl = re.match(regex, url_string) is not None
 
         if is_inputurl == True:
-            thread = Thread(target=downloader)
-            thread.start()
-            sleep(1)
+            if playlist == "--yes-playlist":
+                code_list = ""
+                video_links = Playlist(url_string).video_urls
+                playlistlength = len(video_links)
+                if playlistlength < 1:
+                    code_list = create_downloader_code(url_string, True)
+                else:
+                    if len(playlistsettings)!=0:
+                        playlist_indexes = []
+                        placeholder = playlistsettings.replace("playlist-items ", "").split(",")
+                        for index in placeholder:
+                            if len(index)>1:
+                                from_to = index.split("-")
+
+                                start_add = int(min(from_to))
+                                end_add = int(max(from_to))
+                                j = start_add
+                                while j <= end_add:
+                                    playlist_indexes.append(video_links[j])
+                                    j += 1
+                            else:
+                                playlist_indexes.append(video_links[int(index)])
+                        
+                        video_links = playlist_indexes
+                        playlistsettings = ""
+
+                    playlistlength = len(video_links)
+                    print(playlistlength)
+                    seperator = "; "
+                    i = 0
+                    while i < playlistlength:
+                        if i == playlistlength - 1:
+                            seperator = ""
+                        
+                        code_list += create_downloader_code(video_links[i]) + seperator
+                        i += 1
+                        
+                    
+                print(code_list)
+                subprocess.call(code_list, creationflags=subprocess.CREATE_NEW_CONSOLE)
+            else:
+                subprocess.call(create_downloader_code(url_string), creationflags=subprocess.CREATE_NEW_CONSOLE)
 
         if url_string == "restart":
             starter()
@@ -99,37 +135,20 @@ def main_downloader(audio_or_video):
             playlist = "--no-playlist"
 
         elif url_string == "playlist-spec":
-            playlist_spec = str(input("Enter: 'list' --> download from to of Playlist \nEnter: 'spec' --> download specific videos\n >> "))
-            if playlist_spec == "list":
-                def special_match(strg, search=re.compile(r'[^0-9]').search):
-                    return not bool(search(strg))
-                def playlist_list():
-                    global playlistsettings
+            def special_match(strg, search=re.compile(r'[^0-9,-]').search):
+                return not bool(search(strg))
+            def playlist_spec():
+                global playlistsettings
 
-                    start = str(input("  startvideo >> "))
-                    end = str(input("  endvideo >> "))
-                    if special_match(start) == False or special_match(end) == False:
-                        print(wrong_input)
-                        playlist_list()
-                    else:
-                        playlistsettings = f"--playlist-start {start}--playlist-end NUMBER {end}"
-            elif playlist_spec == "spec":
-                def special_match(strg, search=re.compile(r'[^0-9,-]').search):
-                    return not bool(search(strg))
-                def playlist_spec():
-                    global playlistsettings
+                print("Enter specific videos like: 1,2,7,10-13")
+                playlistsettingsinput = str(input("  >>"))
+                if special_match(playlistsettingsinput) == False or playlistsettingsinput[-1] in (",","-") or playlistsettingsinput[0] in (",","-"):
+                    print(wrong_input)
+                    playlist_spec()
+                else:
+                    playlistsettings = "playlist-items " + playlistsettingsinput
 
-                    print("Enter specific videos like: 1,2,7,10-13")
-                    playlistsettingsinput = str(input("  >>"))
-                    if special_match(playlistsettingsinput) == False or playlistsettingsinput[-1] in (",","-") or playlistsettingsinput[0] in (",","-"):
-                        print(wrong_input)
-                        playlist_spec()
-                    else:
-                        playlistsettings = "playlist-items " + playlistsettingsinput
-
-
-
-                playlist_spec()
+            playlist_spec()
 
         elif url_string == "set-Aformat":
             def set_audio_format():
@@ -198,10 +217,11 @@ def main_downloader(audio_or_video):
     video_format = "mp4"
     #declare END
     #Declare User-preferences
-    destination = "./"+str(input('Enter relative path or enter: "yes" to enter a full path \n >> ') or "Output")+"/"
-    if destination == "./yes/":
-        destination = str(input("Enter full path >>"))+"/"
+    destination = str(input('Enter relative path or enter: "yes" to enter a full path \n >> ') or "Output")+"/"
+    if os.path.isabs(destination) == False:
+        destination = "./"+destination
     #Declare User-preferences END
+    print(destination)
     print("Enter: 'help' for all Functions.")
     main()
 

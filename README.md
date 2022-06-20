@@ -11,7 +11,7 @@
 Start:
 =====
 - First you have to enter 'a' if you want to download Audio or 'v' for Videos
-- Next you have to enter a name that will be the download target folder or just hit Enter --> then it will save in ".\\Output"
+- Next you have to enter a relative or absolute path that will be the download target folder or just hit Enter --> then it will save in ".\\Output"
 - After you can just enter the URL to download or use the commands below over and over again
 
 All commands:

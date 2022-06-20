@@ -1,5 +1,8 @@
 ApplicationCreation/AudioAndVideoDownloader 
 ApplicationCreation/__pycache__
 *.zip
-./Output
+Output/
+Modules/
+ListModules.py
 test.py
+Core_spotify.py
