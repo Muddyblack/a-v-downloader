@@ -33,6 +33,9 @@ List of supported websites:
 ===========================
     https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md
 
+    /*Beta*\
+    https://open.spotify.com/
+
 Sources:
 =======
     AudioIcon: https://de.cleanpng.com/png-j0xxwa/
