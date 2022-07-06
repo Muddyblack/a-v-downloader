@@ -1,16 +1,16 @@
 import sys
 sys.path.insert(0,".\Modules")
 
-#api
+##api
 from pytube import YouTube, Playlist
 from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy
 
-#urrlib
+##urrlib
 import urllib.request
 import urllib.parse
 
-#system
+##system
 import subprocess, threading
 import re, os, shutil
 from threading import Thread
@@ -18,7 +18,7 @@ from subprocess import PIPE, Popen
 from time import sleep
 
 
-
+##funcs
 def main_downloader(audio_or_video):
     global url_string
     global playlist
@@ -36,12 +36,17 @@ def main_downloader(audio_or_video):
             r'(?::\d+)?' # optional port
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
-    def create_downloader_code(url_string, is_it_mixer = False):
+    def create_downloader_code(url_string_list, is_it_mixer = False):
         global playlist
         global destination
         global playlistsettings
         global audio_format
         global video_format
+
+        code_txt = ""
+        sperator = ";"
+        if isinstance(url_string_list, str):
+            url_string_list = [url_string_list]
 
         if is_it_mixer == False:
             playlist == "--no-playlist"
@@ -51,34 +56,45 @@ def main_downloader(audio_or_video):
 
         
         filename = "%(title)s.%(ext)s"
-    
-        try:
-            yt = YouTube(url_string)
 
-            #artist = yt.metadata[0]['Artist']
-            title = yt.metadata[0]['Song']
 
-            filename = f"{title}.{audio_format}" #{artist} •
-            
-        except:
-            pass
+        for url_string in url_string_list:
+            try:
+                yt = YouTube(url_string)
 
-        if audio_or_video == "a":
-            #add thumbnail where possible
-            if audio_format == "mp3" or audio_format == "m4a" or audio_format == "opus" or audio_format == "flac":
-                audio_format = audio_format + " --embed-thumbnail"
-            #codepiece
-            return f'yt-dlp -x {playlist} {playlistsettings} --audio-quality 192 --audio-format {audio_format} --add-metadata -o "{destination}{filename}" {url_string}'
-        elif audio_or_video == "v":
-            #yt-dlp can't recognize webm as format it is just standard so needed to differ
-            
-            if video_format != "webm":
-                v_format = f"--format {video_format}"
-            return f'yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings} {v_format} --add-metadata  -o "{destination}%(title)s.f%(format_id)s.%(ext)s" {url_string}' 
-                                                #{playlist} {playlistsettings}
+                #artist = yt.metadata[0]['Artist']
+                title = yt.metadata[0]['Song']
+
+                filename = f"{title}.{audio_format}" #{artist} •       
+            except:
+                pass
+
+            if audio_or_video == "a":
+                #add thumbnail where possible
+                if audio_format == "mp3" or audio_format == "m4a" or audio_format == "opus" or audio_format == "flac":
+                    audio_format = audio_format + " --embed-thumbnail"
+                #codepiece
+                #return f'yt-dlp -x {playlist} {playlistsettings} --audio-quality 192 --audio-format {audio_format} --add-metadata -o "{destination}{filename}" {url_string}'
+                code_txt += f'yt-dlp -x {playlist} {playlistsettings} --audio-quality 192 --audio-format {audio_format} --add-metadata -o "{destination}{filename}" {url_string}{sperator}'
+            elif audio_or_video == "v":
+                #yt-dlp can't recognize webm as format it is just standard so needed to differ
+                
+                if video_format != "webm":
+                    v_format = f"--format {video_format}"
+                #return f'yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings} {v_format} --add-metadata  -o "{destination}%(title)s.f%(format_id)s.%(ext)s" {url_string}' 
+                                                    #{playlist} {playlistsettings}
+                code_txt += f'yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings} {v_format} --add-metadata  -o "{destination}%(title)s.f%(format_id)s.%(ext)s" {url_string}{sperator}' 
+        
+        return code_txt[:-1]
+
+
+
 
     def check_spotify_in_yt(song_list):
+        global missed_songs
+        
         url_list = []
+        missed_songs = []
         limit = 10
 
         for i in range(len(song_list)):
@@ -94,6 +110,7 @@ def main_downloader(audio_or_video):
             
             url_cache = []
             indicator_list = []
+            
 
             for j in range(limit): #len(search_results)):
                 link = "http://www.youtube.com/watch?v=" + search_results[j]
@@ -115,9 +132,10 @@ def main_downloader(audio_or_video):
                     
                     url_cache.append(link)
                     indicator_list.append(abs(video_length-song_duration) + title_equality*15)
-
-
-            if len(url_cache) >0:
+            
+            if len(url_cache) < 1:
+                missed_songs.append(song_title)
+            if len(url_cache) > 0:
                 url_list.append(url_cache[indicator_list.index(min(indicator_list))])
 
         print(url_list)
@@ -130,6 +148,7 @@ def main_downloader(audio_or_video):
         global playlistsettings
         global audio_format
         global video_format
+        global missed_songs
 
         wrong_input = "try again bad input"
 
@@ -144,6 +163,8 @@ def main_downloader(audio_or_video):
                 code_list = ""
                 video_links = Playlist(url_string).video_urls
                 playlistlength = len(video_links)
+                print(playlistlength)
+
                 if playlistlength < 1:
                     code_list = create_downloader_code(url_string, True)
                 else:
@@ -164,16 +185,8 @@ def main_downloader(audio_or_video):
                         
                         video_links = playlist_indexes
                         playlistsettings = ""
-
-                    playlistlength = len(video_links)
-                    print(playlistlength)
-                    seperator = "; "
-                    for i in range(playlistlength):
-                        if i == playlistlength - 1:
-                            seperator = ""
-                        
-                        code_list += create_downloader_code(video_links[i]) + seperator
-                        i += 1
+                    code_list = create_downloader_code(video_links, True)
+                   
                         
                     
                 print(code_list)
@@ -183,7 +196,7 @@ def main_downloader(audio_or_video):
         elif is_inputurl and is_spoitfy_url:
 
             cid = '36f3fd07ecba4f56947be168b7acbd14'
-            secret = 'd3e8bd02dfc24062b621a0fa1ebfa5dd'
+            secret = XXX
 
 
             auth_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
@@ -245,6 +258,13 @@ def main_downloader(audio_or_video):
             print(song_list)
             
             yt_urls = check_spotify_in_yt(song_list)
+            code_list = create_downloader_code(yt_urls)
+
+            
+            if len(missed_songs)>0:
+                print(f"\n------------------------ \nError with these songs:\n{missed_songs}\n------------------------\n")
+            subprocess.call(code_list, creationflags=subprocess.CREATE_NEW_CONSOLE)
+
 
         if url_string == "restart":
             starter()
@@ -353,5 +373,8 @@ def starter():
     else:
         main_downloader(audio_or_video)   
 
+
+
+##go
 os.system('color 9')
 starter()
