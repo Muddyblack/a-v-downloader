@@ -1,11 +1,16 @@
 import sys
 sys.path.insert(0,".\Modules")
 
+#api
 from pytube import YouTube, Playlist
 from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy
-from youtubesearchpython import *
 
+#urrlib
+import urllib.request
+import urllib.parse
+
+#system
 import subprocess, threading
 import re, os, shutil
 from threading import Thread
@@ -74,23 +79,49 @@ def main_downloader(audio_or_video):
 
     def check_spotify_in_yt(song_list):
         url_list = []
-        limit = 15
+        limit = 10
 
         for i in range(len(song_list)):
             song_title = song_list[i][0]
             song_interpret = song_list[i][1]
-            song_duration_ms = song_list[i][2]
+            song_duration = int(song_list[i][2])/1000 #convert milliseconds into seconds
 
-            customSearch = VideosSearch(f"{song_title} {song_interpret}", limit = limit)
-            results = customSearch.result()['result']  
+            query_string = urllib.parse.urlencode({"search_query" : song_title + " - " + song_interpret})
+            html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)
 
+            html = html_content.read().decode()
+            search_results = re.findall(r'"url":\"\/watch\?v=(.{11})', html)
+            
             url_cache = []
-            for j in range(len(results)):
-                url_cache.append(results[j]['link'])
+            indicator_list = []
 
-                #print(customSearch.result()['result'][i]['link'])
-            url_list.append(url_cache)    
+            for j in range(limit): #len(search_results)):
+                link = "http://www.youtube.com/watch?v=" + search_results[j]
+
+                yt = YouTube(link)
+                video_length = yt.length
+                video_title = yt.title
+
+                song_title_list =  re.sub("[!,*)@#%(&$_?.^]",'', song_title).split()
+                v_title_list =   re.sub("[!,*)@#%(&$_?.^]",'', video_title).split()
+                
+
+                try:
+                    title_equality =   len(set(song_title_list) & set(v_title_list)) / len(song_title_list) 
+                except:
+                    title_equality = 0
+
+                if (abs(video_length-song_duration)<= song_duration*0.2) and title_equality > 0.3:
+                    
+                    url_cache.append(link)
+                    indicator_list.append(abs(video_length-song_duration) + title_equality*15)
+
+
+            if len(url_cache) >0:
+                url_list.append(url_cache[indicator_list.index(min(indicator_list))])
+
         print(url_list)
+        return url_list
 
     def main():
         global url_string
@@ -151,8 +182,8 @@ def main_downloader(audio_or_video):
                 subprocess.call(create_downloader_code(url_string), creationflags=subprocess.CREATE_NEW_CONSOLE)
         elif is_inputurl and is_spoitfy_url:
 
-            cid = 'XXX'
-            secret = 'XXX'
+            cid = '36f3fd07ecba4f56947be168b7acbd14'
+            secret = 'd3e8bd02dfc24062b621a0fa1ebfa5dd'
 
 
             auth_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
