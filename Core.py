@@ -17,6 +17,20 @@ from threading import Thread
 from subprocess import PIPE, Popen
 from time import sleep
 
+#helper
+def read_file(file_path):
+    f = open(file_path, "r")
+
+    txt_lines = f.readlines()
+    txt_lines_length = len(txt_lines)
+    r = 0 
+    while r < txt_lines_length:
+        txt_lines[r]= txt_lines[r].replace('\n','')
+        r+=1
+
+    f.close()
+    return txt_lines
+
 
 ##funcs
 def main_downloader(audio_or_video):
@@ -36,7 +50,7 @@ def main_downloader(audio_or_video):
             r'(?::\d+)?' # optional port
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
-    def create_downloader_code(url_string_list, is_it_mixer = False):
+    def create_downloader_code(url_string_list):
         global playlist
         global destination
         global playlistsettings
@@ -48,15 +62,10 @@ def main_downloader(audio_or_video):
         if isinstance(url_string_list, str):
             url_string_list = [url_string_list]
 
-        if is_it_mixer == False:
-            playlist == "--no-playlist"
+        if playlist == "--no-playlist":
             playlistsettings = ""
 
         print("set download code")
-
-        
-        filename = "%(title)s.%(ext)s"
-
 
         for url_string in url_string_list:
             try:
@@ -67,28 +76,24 @@ def main_downloader(audio_or_video):
 
                 filename = f"{title}.{audio_format}" #{artist} •       
             except:
-                pass
+                filename = "%(title)s.%(ext)s"
 
             if audio_or_video == "a":
                 #add thumbnail where possible
                 if audio_format == "mp3" or audio_format == "m4a" or audio_format == "opus" or audio_format == "flac":
                     audio_format = audio_format + " --embed-thumbnail"
+                
                 #codepiece
-                #return f'yt-dlp -x {playlist} {playlistsettings} --audio-quality 192 --audio-format {audio_format} --add-metadata -o "{destination}{filename}" {url_string}'
                 code_txt += f'yt-dlp -x {playlist} {playlistsettings} --audio-quality 192 --audio-format {audio_format} --add-metadata -o "{destination}{filename}" {url_string}{sperator}'
             elif audio_or_video == "v":
                 #yt-dlp can't recognize webm as format it is just standard so needed to differ
                 
                 if video_format != "webm":
                     v_format = f"--format {video_format}"
-                #return f'yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings} {v_format} --add-metadata  -o "{destination}%(title)s.f%(format_id)s.%(ext)s" {url_string}' 
-                                                    #{playlist} {playlistsettings}
+
                 code_txt += f'yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings} {v_format} --add-metadata  -o "{destination}%(title)s.f%(format_id)s.%(ext)s" {url_string}{sperator}' 
         
         return code_txt[:-1]
-
-
-
 
     def check_spotify_in_yt(song_list):
         global missed_songs
@@ -97,7 +102,7 @@ def main_downloader(audio_or_video):
         missed_songs = []
         limit = 10
 
-        for i in range(len(song_list)):
+        def thread_yt_search(i):
             song_title = song_list[i][0]
             song_interpret = song_list[i][1]
             song_duration = int(song_list[i][2])/1000 #convert milliseconds into seconds
@@ -138,6 +143,17 @@ def main_downloader(audio_or_video):
             if len(url_cache) > 0:
                 url_list.append(url_cache[indicator_list.index(min(indicator_list))])
 
+        threads = []
+        for i in range(len(song_list)):
+            t = Thread(daemon=True, target= thread_yt_search, args=(i,))
+            threads.append(t)
+
+        for x in threads:
+            x.start()
+        
+        for x in threads:
+            x.join()
+        
         print(url_list)
         return url_list
 
@@ -159,53 +175,36 @@ def main_downloader(audio_or_video):
         is_spoitfy_url = bool(regexp.search(url_string))
 
         if is_inputurl and is_spoitfy_url == False:
-            if playlist == "--yes-playlist":
-                code_list = ""
-                video_links = Playlist(url_string).video_urls
-                playlistlength = len(video_links)
-                print(playlistlength)
+            code_list = ""
+            video_links = Playlist(url_string).video_urls
+            playlistlength = len(video_links)
+            print(playlistlength)
 
-                if playlistlength < 1:
-                    code_list = create_downloader_code(url_string, True)
-                else:
-                    if len(playlistsettings)!=0:
-                        playlist_indexes = []
-                        placeholder = playlistsettings.replace("playlist-items ", "").split(",")
-                        for index in placeholder:
-                            if len(index)>1:
-                                from_to = index.split("-")
-
-                                start_add = int(min(from_to))
-                                end_add = int(max(from_to))
-
-                                for j in range(start_add, end_add):
-                                    playlist_indexes.append(video_links[j])
-                            else:
-                                playlist_indexes.append(video_links[int(index)])
-                        
-                        video_links = playlist_indexes
-                        playlistsettings = ""
-                    code_list = create_downloader_code(video_links, True)
-                   
-                def d():
-                    subprocess.call(code_list, creationflags=subprocess.CREATE_NEW_CONSOLE)
-
-                d = threading.Thread(daemon=True, target=d)
-                d.start()
+            if playlistlength < 1:
+                code_list = create_downloader_code(url_string)
             else:
-                def d():
-                    subprocess.call(create_downloader_code(url_string), creationflags=subprocess.CREATE_NEW_CONSOLE)
+                if len(playlistsettings)!=0:
+                    playlist_indexes = []
+                    placeholder = playlistsettings.replace("playlist-items ", "").split(",")
+                    for index in placeholder:
+                        if len(index)>1:
+                            from_to = index.split("-")
 
-                d = threading.Thread(daemon=True, target=d)
-                d.start()
+                            start_add = int(min(from_to))
+                            end_add = int(max(from_to))
+
+                            for j in range(start_add, end_add):
+                                playlist_indexes.append(video_links[j])
+                        else:
+                            playlist_indexes.append(video_links[int(index)])
+                    
+                    video_links = playlist_indexes
+                    playlistsettings = ""
+                code_list = create_downloader_code(video_links)
                 
         elif is_inputurl and is_spoitfy_url:
 
-            cid = '36f3fd07ecba4f56947be168b7acbd14'
-            secret = 'b12707f2c9d3425394e61de0699d41ac'
-
-
-            auth_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
+            auth_manager = SpotifyClientCredentials(client_id=CID, client_secret=SECRET)
             sp = spotipy.Spotify(auth_manager=auth_manager)
 
             song_list = []
@@ -270,12 +269,11 @@ def main_downloader(audio_or_video):
             if len(missed_songs)>0:
                 print(f"\n------------------------ \nError with these songs:\n{missed_songs}\n------------------------\n")
            
-            def d():
-                subprocess.call(code_list, creationflags=subprocess.CREATE_NEW_CONSOLE)
-
-            d = threading.Thread(daemon=True, target=d)
-            d.start()
-
+        def d():
+            subprocess.call(code_list, creationflags=subprocess.CREATE_NEW_CONSOLE)
+       
+        d = threading.Thread(daemon=True, target=d)
+        d.start()
 
 
         if url_string == "restart":
@@ -360,6 +358,7 @@ def main_downloader(audio_or_video):
         else:
             print("This is not a valid Input")
             main()
+        
         main()
         
     #declare
@@ -367,13 +366,18 @@ def main_downloader(audio_or_video):
     playlistsettings = ""
     audio_format = "mp3"
     video_format = "mp4"
+    spotifyapiinfo = read_file("Spotify_Application.info")
+    CID =str(spotifyapiinfo[0])
+    SECRET = str(spotifyapiinfo[1])
+
     #declare END
     #Declare User-preferences
-    destination = str(input('Enter relative path or enter: "yes" to enter a full path \n >> ') or "Output")+"/"
+    destination = str(input('Enter relative or a full path \n >> ') or "Output")+"/"
     if os.path.isabs(destination) == False:
         destination = "./Output/"+destination
     #Declare User-preferences END
-    print(destination)
+
+    print(f"Destination: {destination}")
     print("Enter: 'help' for all Functions.")
     main()
 
