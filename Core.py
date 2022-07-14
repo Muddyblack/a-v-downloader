@@ -11,11 +11,10 @@ import urllib.request
 import urllib.parse
 
 ##system
-import subprocess, threading
+import subprocess
 import re, os, shutil
 from threading import Thread
 from subprocess import PIPE, Popen
-from time import sleep
 
 #helper
 def read_file(file_path):
@@ -56,6 +55,8 @@ def main_downloader(audio_or_video):
         global playlistsettings
         global audio_format
         global video_format
+        global code_txt
+        
 
         code_txt = ""
         sperator = ";"
@@ -67,7 +68,14 @@ def main_downloader(audio_or_video):
 
         print("set download code")
 
-        for url_string in url_string_list:
+        def thread_code_writer(url_string):
+            global playlist
+            global destination
+            global playlistsettings
+            global audio_format
+            global video_format
+            global code_txt
+
             try:
                 yt = YouTube(url_string)
 
@@ -92,7 +100,22 @@ def main_downloader(audio_or_video):
                     v_format = f"--format {video_format}"
 
                 code_txt += f'yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings} {v_format} --add-metadata  -o "{destination}%(title)s.f%(format_id)s.%(ext)s" {url_string}{sperator}' 
+
+        threads = []
+       
+       
+        for url_string in url_string_list:
+            t = Thread(daemon=True, target= thread_code_writer, args=(url_string,))
+            threads.append(t)
+
+        for x in threads:
+            x.start()
         
+        for x in threads:
+            x.join()
+
+
+
         return code_txt[:-1]
 
     def check_spotify_in_yt(song_list):
@@ -141,7 +164,9 @@ def main_downloader(audio_or_video):
             if len(url_cache) < 1:
                 missed_songs.append(song_title)
             if len(url_cache) > 0:
-                url_list.append(url_cache[indicator_list.index(min(indicator_list))])
+                final_url = url_cache[indicator_list.index(min(indicator_list))] 
+                url_list.append(final_url)
+
 
         threads = []
         for i in range(len(song_list)):
@@ -168,41 +193,15 @@ def main_downloader(audio_or_video):
 
         wrong_input = "try again bad input"
 
+        #get input
         url_string = str(input(" >> "))
         is_inputurl = re.match(regex, url_string) is not None
 
+        #check as boolean if link is a spotify link
         regexp = re.compile(r'^(spotify:|https:\/\/[a-z]+\.spotify\.com\/)')
         is_spoitfy_url = bool(regexp.search(url_string))
-
-        if is_inputurl and is_spoitfy_url == False:
-            code_list = ""
-            video_links = Playlist(url_string).video_urls
-            playlistlength = len(video_links)
-            print(playlistlength)
-
-            if playlistlength < 1:
-                code_list = create_downloader_code(url_string)
-            else:
-                if len(playlistsettings)!=0:
-                    playlist_indexes = []
-                    placeholder = playlistsettings.replace("playlist-items ", "").split(",")
-                    for index in placeholder:
-                        if len(index)>1:
-                            from_to = index.split("-")
-
-                            start_add = int(min(from_to))
-                            end_add = int(max(from_to))
-
-                            for j in range(start_add, end_add):
-                                playlist_indexes.append(video_links[j])
-                        else:
-                            playlist_indexes.append(video_links[int(index)])
-                    
-                    video_links = playlist_indexes
-                    playlistsettings = ""
-                code_list = create_downloader_code(video_links)
-                
-        elif is_inputurl and is_spoitfy_url:
+      
+        if is_inputurl and is_spoitfy_url:
 
             auth_manager = SpotifyClientCredentials(client_id=CID, client_secret=SECRET)
             sp = spotipy.Spotify(auth_manager=auth_manager)
@@ -267,15 +266,45 @@ def main_downloader(audio_or_video):
 
             
             if len(missed_songs)>0:
-                print(f"\n------------------------ \nError with these songs:\n{missed_songs}\n------------------------\n")
-           
+                print(f"\n------------------------ \nError with these songs:\n{missed_songs}\n------------------------\n")  
+        elif is_inputurl:
+
+            try:
+                video_links = Playlist(url_string).video_urls
+                playlistlength = len(video_links)
+            except:
+                playlistlength = 1    
+
+            if playlistlength <= 1:
+                code_list = create_downloader_code(url_string)
+            else:
+                if len(playlistsettings)!=0:
+                    playlist_indexes = []
+                    placeholder = playlistsettings.replace("playlist-items ", "").split(",")
+                    for index in placeholder:
+                        if len(index)>1:
+                            from_to = index.split("-")
+
+                            start_add = int(min(from_to))
+                            end_add = int(max(from_to))
+
+                            for j in range(start_add, end_add):
+                                playlist_indexes.append(video_links[j])
+                        else:
+                            playlist_indexes.append(video_links[int(index)])
+                    
+                    video_links = playlist_indexes
+                    playlistsettings = ""
+                code_list = create_downloader_code(video_links)
+
         def d():
             subprocess.call(code_list, creationflags=subprocess.CREATE_NEW_CONSOLE)
        
-        d = threading.Thread(daemon=True, target=d)
-        d.start()
+        #d = Thread(daemon=True, target=d)
+        #d.start()
+        print(code_list)
 
-
+        ##options
         if url_string == "restart":
             starter()
 
@@ -369,16 +398,18 @@ def main_downloader(audio_or_video):
     spotifyapiinfo = read_file("Spotify_Application.info")
     CID =str(spotifyapiinfo[0])
     SECRET = str(spotifyapiinfo[1])
-
     #declare END
-    #Declare User-preferences
+
+    #declare User-preferences
     destination = str(input('Enter relative or a full path \n >> ') or "Output")+"/"
     if os.path.isabs(destination) == False:
         destination = "./Output/"+destination
-    #Declare User-preferences END
+    #declare User-preferences END
 
     print(f"Destination: {destination}")
     print("Enter: 'help' for all Functions.")
+
+    #loop
     main()
 
 def starter():
