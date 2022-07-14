@@ -300,9 +300,8 @@ def main_downloader(audio_or_video):
         def d():
             subprocess.call(code_list, creationflags=subprocess.CREATE_NEW_CONSOLE)
        
-        #d = Thread(daemon=True, target=d)
-        #d.start()
-        print(code_list)
+        d = Thread(daemon=True, target=d)
+        d.start()
 
         ##options
         if url_string == "restart":
