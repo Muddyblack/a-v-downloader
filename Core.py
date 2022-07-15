@@ -16,7 +16,7 @@ import re, os, shutil
 from threading import Thread
 from subprocess import PIPE, Popen
 
-#helper
+##helper
 def read_file(file_path):
     f = open(file_path, "r")
 
@@ -29,7 +29,6 @@ def read_file(file_path):
 
     f.close()
     return txt_lines
-
 
 ##funcs
 def main_downloader(audio_or_video):
@@ -103,7 +102,6 @@ def main_downloader(audio_or_video):
 
         threads = []
        
-       
         for url_string in url_string_list:
             t = Thread(daemon=True, target= thread_code_writer, args=(url_string,))
             threads.append(t)
@@ -113,8 +111,6 @@ def main_downloader(audio_or_video):
         
         for x in threads:
             x.join()
-
-
 
         return code_txt[:-1]
 
@@ -215,14 +211,13 @@ def main_downloader(audio_or_video):
             regextr = re.compile(r'^(spotify:|https:\/\/[a-z]+\.spotify\.com\/track)')
 
             def spotipy_get_track_infos(results, key_change = None):
-                #print(results)
                 if key_change == None:
                     key = 'items'
                 elif key_change == "artist":
                     key = 'tracks'
                     
 
-                for track in results[key]:  #tracks
+                for track in results[key]:
                     song = []
 
                     song.append(track['name'] )
@@ -269,11 +264,15 @@ def main_downloader(audio_or_video):
                 print(f"\n------------------------ \nError with these songs:\n{missed_songs}\n------------------------\n")  
         elif is_inputurl:
 
-            try:
-                video_links = Playlist(url_string).video_urls
-                playlistlength = len(video_links)
-            except:
-                playlistlength = 1    
+            if playlist == "--no-playlist":
+                playlistlength = 1 
+            else:
+                try:
+                    video_links = Playlist(url_string).video_urls
+                    playlistlength = len(video_links)
+                except:
+                    playlistlength = 1
+            
 
             if playlistlength <= 1:
                 code_list = create_downloader_code(url_string)
@@ -418,8 +417,6 @@ def starter():
         starter()
     else:
         main_downloader(audio_or_video)   
-
-
 
 ##go
 os.system('color 9')

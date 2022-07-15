@@ -34,7 +34,7 @@ List of supported websites:
 ===========================
     https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md
 
-    /*Beta*\
+    /*Beta via Youtube*\
     https://open.spotify.com/
 
 Sources:
