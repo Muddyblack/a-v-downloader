@@ -22,7 +22,9 @@ def read_file(input_path):
     return read_lines
 
 def write_encrpyted_file(file_name):
-    file_text = read_file(".\\"+file_name)
+    ddir_path = os.path.dirname(file_path)
+
+    file_text = read_file(f"{ddir_path}\\{file_name}")
 
     with open(f"{file_path}\\{file_name}", 'w') as f: 
         f.write("from cryptography.fernet import Fernet\n"+
@@ -45,7 +47,8 @@ def write_encrpyted_file(file_name):
                 "exec(decrypted_message)")
         f.close()
 
-file_path = os.getcwd()+"\\ApplicationCreation"
+
+file_path = os.path.dirname(os.path.realpath(__file__))
 
 write_encrpyted_file("Core.py")
 
@@ -61,16 +64,16 @@ else:
     os.mkdir(application_folder_dir)
 
 
-subprocess.call(f"python -m PyInstaller --clean {file_path}\\Downloader.spec", cwd=application_folder_dir)
+subprocess.call(f"""python -m PyInstaller --clean  {file_path}\\Downloader.spec""", cwd=application_folder_dir)
 
 
-copytree(r""+file_path+"\AudioAndVideoDownloader\dist",application_folder_dir)
+copytree(f"{application_folder_dir}\\dist", application_folder_dir)
 
 
-shutil.rmtree(f"{file_path}\\AudioAndVideoDownloader\\dist")
-shutil.rmtree(f"{file_path}\\AudioAndVideoDownloader\\build")
+shutil.rmtree(f"{application_folder_dir}\\dist")
+shutil.rmtree(f"{application_folder_dir}\\build")
 
-copyfile(".\\README.md", application_folder_dir+"\\README.md")
+copyfile(f"{os.path.dirname(file_path)}\\README.md", f"{application_folder_dir}\\README.md")
 
 
 try:

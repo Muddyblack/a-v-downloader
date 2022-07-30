@@ -81,7 +81,7 @@ def main_downloader(audio_or_video):
                 #artist = yt.metadata[0]['Artist']
                 title = yt.metadata[0]['Song']
 
-                filename = f"{title}.{audio_format}" #{artist} •       
+                filename = f"{title}.{audio_format}" #{artist}       
             except:
                 filename = "%(title)s.%(ext)s"
 
@@ -296,11 +296,12 @@ def main_downloader(audio_or_video):
                     playlistsettings = ""
                 code_list = create_downloader_code(video_links)
 
-        def d():
-            subprocess.call(code_list, creationflags=subprocess.CREATE_NEW_CONSOLE)
-       
-        d = Thread(daemon=True, target=d)
-        d.start()
+        if is_inputurl:
+            def d():
+                subprocess.call(code_list, creationflags=subprocess.CREATE_NEW_CONSOLE)
+        
+            d = Thread(daemon=True, target=d)
+            d.start()
 
         ##options
         if url_string == "restart":
@@ -382,10 +383,10 @@ def main_downloader(audio_or_video):
                 print("Enter: 'set-Aformat' --> you can use: mp3, wav, m4a, opus, aac, flac")
             elif audio_or_video == "v":
                 print("Enter: 'set-Vformat' --> you can use: mp4, webm, 3gp")
-        else:
+        elif(is_inputurl == False):
             print("This is not a valid Input")
             main()
-        
+
         main()
         
     #declare
