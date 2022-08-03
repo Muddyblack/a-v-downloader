@@ -3,6 +3,7 @@ sys.path.insert(0,".\Modules")
 
 ##api
 from pytube import YouTube, Playlist
+from ytmusicapi import YTMusic
 from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy
 
@@ -15,6 +16,9 @@ import subprocess
 import re, os, shutil
 from threading import Thread
 from subprocess import PIPE, Popen
+
+##UI
+from tkinter import filedialog
 
 ##helper
 def read_file(file_path):
@@ -29,6 +33,12 @@ def read_file(file_path):
 
     f.close()
     return txt_lines
+
+def stamp_to_seconds(timestr):
+    seconds= 0
+    for part in timestr.split(':'):
+        seconds= seconds*60 + int(part, 10)
+    return seconds
 
 ##funcs
 def main_downloader(audio_or_video):
@@ -106,59 +116,86 @@ def main_downloader(audio_or_video):
 
         return code_txt[:-1]
 
-    def check_spotify_in_yt(song_list):
+    def check_spotify_in_yt_music(song_list):
         global missed_songs
         
         url_list = []
         missed_songs = []
         limit = 10
 
-        def thread_yt_search(i):
+        def thread_yt__music_search(i):
             song_title = song_list[i][0]
             song_interpret = song_list[i][1]
             song_duration = int(song_list[i][2])/1000 #convert milliseconds into seconds
 
-            query_string = urllib.parse.urlencode({"search_query" : song_title + " - " + song_interpret})
-            html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)
-
-            html = html_content.read().decode()
-            search_results = re.findall(r'"url":\"\/watch\?v=(.{11})', html)
+            ytmusic = YTMusic(requests_session=False)
+            search_results = ytmusic.search(f"{song_title} - {song_interpret}")
             
             url_cache = []
             indicator_list = []
             
 
-            for j in range(limit): #len(search_results)):
-                link = "http://www.youtube.com/watch?v=" + search_results[j]
-
-                yt = YouTube(link)
-                video_length = yt.length
-                video_title = yt.title
-
-                song_title_list =  re.sub("[!,*)@#%(&$_?.^]",'', song_title).split()
-                v_title_list =   re.sub("[!,*)@#%(&$_?.^]",'', video_title).split()
-                
-
+            for j in range(len(search_results)): #limit
                 try:
-                    title_equality =   len(set(song_title_list) & set(v_title_list)) / len(song_title_list) 
-                except:
-                    title_equality = 0
+                    indexed_result = search_results[j]
 
-                if (abs(video_length-song_duration)<= song_duration*0.2) and title_equality > 0.3:
-                    
-                    url_cache.append(link)
-                    indicator_list.append(abs(video_length-song_duration) + title_equality*15)
-            
+                    y_title = indexed_result["title"]
+                    y_duration = stamp_to_seconds(str(indexed_result["duration"])) 
+                    link = f"https://music.youtube.com/watch?v={indexed_result['videoId']}"
+
+                    song_title_list =  re.sub("[!,*)@#%(&$_?.^]",'', song_title).split()
+                    y_title_list =   re.sub("[!,*)@#%(&$_?.^]",'', y_title).split()
+
+                    try:
+                        title_equality =   len(set(song_title_list) & set(y_title_list)) / len(song_title_list) 
+                    except:
+                        title_equality = 0
+
+                    if (abs(y_duration-song_duration)<= song_duration*0.2) and title_equality > 0.3:  
+                        url_cache.append(link)
+                        indicator_list.append(abs(y_duration-song_duration) + title_equality*15)
+                except:
+                    pass
+
             if len(url_cache) < 1:
-                missed_songs.append(song_title)
-            if len(url_cache) > 0:
+                #####add to search in YT itself
+                query_string = urllib.parse.urlencode({"search_query" : song_title + " - " + song_interpret})
+                html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)
+                html = html_content.read().decode()
+                search_results = re.findall(r'"url":\"\/watch\?v=(.{11})', html)
+
+                for j in range(limit): #len(search_results)):
+                    link = "http://www.youtube.com/watch?v=" + search_results[j]
+
+                    yt = YouTube(link)
+                    video_length = yt.length
+                    video_title = yt.title
+
+                    song_title_list =  re.sub("[!,*)@#%(&$_?.^]",'', song_title).split()
+                    v_title_list =   re.sub("[!,*)@#%(&$_?.^]",'', video_title).split()
+                    
+
+                    try:
+                        title_equality =   len(set(song_title_list) & set(v_title_list)) / len(song_title_list) 
+                    except:
+                        title_equality = 0
+
+                    if (abs(video_length-song_duration)<= song_duration*0.2) and title_equality > 0.3:
+                        
+                        url_cache.append(link)
+                        indicator_list.append(abs(video_length-song_duration) + title_equality*15)
+            
+                if len(url_cache) < 1:
+                    missed_songs.append(song_title)
+            
+            if len(url_cache) >= 1:
                 final_url = url_cache[indicator_list.index(min(indicator_list))] 
                 url_list.append(final_url)
 
 
         threads = []
         for i in range(len(song_list)):
-            t = Thread(daemon=True, target= thread_yt_search, args=(i,))
+            t = Thread(daemon=True, target= thread_yt__music_search, args=(i,))
             threads.append(t)
 
         for x in threads:
@@ -248,7 +285,7 @@ def main_downloader(audio_or_video):
                 
             print(song_list)
             
-            yt_urls = check_spotify_in_yt(song_list)
+            yt_urls = check_spotify_in_yt_music(song_list)
             code_list = create_downloader_code(yt_urls)
 
             
@@ -388,13 +425,17 @@ def main_downloader(audio_or_video):
     video_format = "mp4"
     spotifyapiinfo = read_file("Spotify_Application.info")
     CID =str(spotifyapiinfo[0])
-    SECRET = str(spotifyapiinfo[1])
+    SECRET = str(spotifyapiinfo[1])     
     #declare END
 
     #declare User-preferences
-    destination = str(input('Enter relative or a full path \n >> ') or "Output")+"/"
+    destination = ""
+    while(destination == "" or destination == "/"):
+        destination = input('Enter relative or a full path or hit enter to choose via explorer \n >> ') or filedialog.askdirectory(initialdir = f"{os.getcwd()}", 
+                                                                                                                                    title = "Select folder",)+"/"
+    
     if os.path.isabs(destination) == False:
-        destination = "./Output/"+destination
+        destination = "./Output/"+destination+"/"
     #declare User-preferences END
 
     print(f"Destination: {destination}")
