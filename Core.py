@@ -74,16 +74,8 @@ def main_downloader(audio_or_video):
             global audio_format
             global video_format
             global code_txt
-
-            try:
-                yt = YouTube(url_string)
-
-                #artist = yt.metadata[0]['Artist']
-                title = yt.metadata[0]['Song']
-
-                filename = f"{title}.{audio_format}" #{artist}       
-            except:
-                filename = "%(title)s.%(ext)s"
+            
+            filename = "%(title)s.%(ext)s"
 
             if audio_or_video == "a":
                 #add thumbnail where possible
