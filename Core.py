@@ -22,16 +22,12 @@ from tkinter import filedialog
 
 ##helper
 def read_file(file_path):
-    f = open(file_path, "r")
+    with open(file_path, "r") as f:
+        txt_lines = f.readlines()
 
-    txt_lines = f.readlines()
-    txt_lines_length = len(txt_lines)
-    r = 0 
-    while r < txt_lines_length:
-        txt_lines[r]= txt_lines[r].replace('\n','')
-        r+=1
+        for r in range(len(txt_lines)):
+            txt_lines[r]= txt_lines[r].replace('\n','')
 
-    f.close()
     return txt_lines
 
 def stamp_to_seconds(timestr):
@@ -216,17 +212,19 @@ def main_downloader(audio_or_video):
         global video_format
         global missed_songs
 
-        wrong_input = "try again bad input"
+        WRONGINPUT = "try again bad input"
 
         #get input
         url_string = str(input(" >> "))
         is_inputurl = re.match(regex, url_string) is not None
+        is_accepted_url = False
 
         #check as boolean if link is a spotify link
         regexp = re.compile(r'^(spotify:|https:\/\/[a-z]+\.spotify\.com\/)')
         is_spoitfy_url = bool(regexp.search(url_string))
       
-        if is_inputurl and is_spoitfy_url:
+        if is_inputurl and is_spoitfy_url and CID != None:
+            is_accepted_url = True
 
             auth_manager = SpotifyClientCredentials(client_id=CID, client_secret=SECRET)
             sp = spotipy.Spotify(auth_manager=auth_manager)
@@ -291,7 +289,8 @@ def main_downloader(audio_or_video):
             
             if len(missed_songs)>0:
                 print(f"\n------------------------ \nError with these songs:\n{missed_songs}\n------------------------\n")  
-        elif is_inputurl:
+        elif is_inputurl and not is_spoitfy_url:
+            is_accepted_url = True
 
             if playlist == "--no-playlist":
                 playlistlength = 1 
@@ -325,13 +324,14 @@ def main_downloader(audio_or_video):
                     playlistsettings = ""
                 code_list = create_downloader_code(video_links)
 
-        if is_inputurl:
+        if is_inputurl and is_accepted_url:
             def d():
                 subprocess.call(code_list, creationflags=subprocess.CREATE_NEW_CONSOLE)
         
             d = Thread(daemon=True, target=d)
             d.start()
-
+        else:
+            print("There might be a problem with the link!")
         ##options
         if url_string == "restart":
             starter()
@@ -350,7 +350,7 @@ def main_downloader(audio_or_video):
                 print("Enter specific videos like: 1,2,7,10-13")
                 playlistsettingsinput = str(input("  >>"))
                 if special_match(playlistsettingsinput) == False or playlistsettingsinput[-1] in (",","-") or playlistsettingsinput[0] in (",","-"):
-                    print(wrong_input)
+                    print(WRONGINPUT)
                     playlist_spec()
                 else:
                     playlistsettings = "playlist-items " + playlistsettingsinput
@@ -423,9 +423,14 @@ def main_downloader(audio_or_video):
     playlistsettings = ""
     audio_format = "mp3"
     video_format = "mp4"
-    spotifyapiinfo = read_file("Spotify_Application.info")
-    CID =str(spotifyapiinfo[0])
-    SECRET = str(spotifyapiinfo[1])     
+    try:
+        spotifyapiinfo = read_file("Spotify_Application.info")
+        CID =str(spotifyapiinfo[0])
+        SECRET = str(spotifyapiinfo[1])     
+    except:
+        print("------------------------------------\nNo Spotify API Credentials declared!\nCannot use spotifylinks!\n------------------------------------")
+        CID = None
+        SECRET = None
     #declare END
 
     #declare User-preferences
@@ -453,5 +458,6 @@ def starter():
         main_downloader(audio_or_video)   
 
 ##go
-os.system('color 9')
-starter()
+if __name__ == "__main__":
+    os.system('color 9')
+    starter()
