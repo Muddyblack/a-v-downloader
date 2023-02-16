@@ -92,11 +92,11 @@ def main_downloader(audio_or_video):
                 code_txt += f'yt-dlp -x {playlist} {playlistsettings} --audio-quality 192 --audio-format {audio_format} --add-metadata -o "{destination}{filename}" {url_string}{sperator}'
             elif audio_or_video == "v":
                 #yt-dlp can't recognize webm as format it is just standard so needed to differ
-                
                 if video_format != "webm":
                     v_format = f"--format {video_format}"
 
                 code_txt += f'yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings} {v_format} --add-metadata  -o "{destination}%(title)s.f%(format_id)s.%(ext)s" {url_string}{sperator}' 
+
 
         threads = []
        
@@ -129,6 +129,8 @@ def main_downloader(audio_or_video):
             
             url_cache = []
             indicator_list = []
+
+            regex_sub = "[!,*)@#%(&$_?.^]"
             
 
             for j in range(len(search_results)): #limit
@@ -139,8 +141,10 @@ def main_downloader(audio_or_video):
                     y_duration = stamp_to_seconds(str(indexed_result["duration"])) 
                     link = f"https://music.youtube.com/watch?v={indexed_result['videoId']}"
 
-                    song_title_list =  re.sub("[!,*)@#%(&$_?.^]",'', song_title).split()
-                    y_title_list =   re.sub("[!,*)@#%(&$_?.^]",'', y_title).split()
+
+
+                    song_title_list =  re.sub(regex_sub,'', song_title).split()
+                    y_title_list =   re.sub(regex_sub,'', y_title).split()
 
                     try:
                         title_equality =   len(set(song_title_list) & set(y_title_list)) / len(song_title_list) 
@@ -167,8 +171,8 @@ def main_downloader(audio_or_video):
                     video_length = yt.length
                     video_title = yt.title
 
-                    song_title_list =  re.sub("[!,*)@#%(&$_?.^]",'', song_title).split()
-                    v_title_list =   re.sub("[!,*)@#%(&$_?.^]",'', video_title).split()
+                    song_title_list =  re.sub(regex_sub,'', song_title).split()
+                    v_title_list =   re.sub(regex_sub,'', video_title).split()
                     
 
                     try:
@@ -184,7 +188,7 @@ def main_downloader(audio_or_video):
                 if len(url_cache) < 1:
                     missed_songs.append(song_title)
             
-            if len(url_cache) >= 1:
+            elif len(url_cache) >= 1:
                 final_url = url_cache[indicator_list.index(min(indicator_list))] 
                 url_list.append(final_url)
 
