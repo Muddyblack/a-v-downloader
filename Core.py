@@ -219,7 +219,7 @@ def main_downloader(audio_or_video):
         WRONGINPUT = "try again bad input"
 
         #get input
-        url_string = str(input(" >> "))
+        url_string = str(input(" >> ")).strip()
         is_inputurl = re.match(regex, url_string) is not None
         is_accepted_url = False
 
@@ -352,7 +352,7 @@ def main_downloader(audio_or_video):
                 global playlistsettings
 
                 print("Enter specific videos like: 1,2,7,10-13")
-                playlistsettingsinput = str(input("  >>"))
+                playlistsettingsinput = str(input("  >>")).strip()
                 if special_match(playlistsettingsinput) == False or playlistsettingsinput[-1] in (",","-") or playlistsettingsinput[0] in (",","-"):
                     print(WRONGINPUT)
                     playlist_spec()
@@ -365,7 +365,7 @@ def main_downloader(audio_or_video):
             def set_audio_format():
                 global audio_format
 
-                audio_format = input(" Use: mp3, wav, m4a, opus, aac, flac \n  >>")
+                audio_format = input(" Use: mp3, wav, m4a, opus, aac, flac \n  >>").strip()
 
                 chars_to_check = ["mp3", "wav", "m4a", "opus", "aac", "flac"]
                 
@@ -387,7 +387,7 @@ def main_downloader(audio_or_video):
             global video_format
 
             def set_video_format():
-                video_format = input(" Use: mp4, webm, 3gp \n  >>")
+                video_format = input(" Use: mp4, webm, 3gp \n  >>").strip()
 
                 chars_to_check = ["mp4", "webm", "3gp"]
                 
@@ -440,7 +440,7 @@ def main_downloader(audio_or_video):
     #declare User-preferences
     destination = ""
     while(destination == "" or destination == "/"):
-        destination = input('Enter relative or a full path or hit enter to choose via explorer \n >> ') or filedialog.askdirectory(initialdir = f"{os.getcwd()}", 
+        destination = input('Enter relative or a full path or hit enter to choose via explorer \n >> ').strip() or filedialog.askdirectory(initialdir = f"{os.getcwd()}", 
                                                                                                                                     title = "Select folder",)+"/"
     
     if os.path.isabs(destination) == False:
@@ -454,7 +454,7 @@ def main_downloader(audio_or_video):
     main()
 
 def starter():
-    audio_or_video = str(input("Enter: 'a' for audio or 'v' for video download \n >>"))
+    audio_or_video = str(input("Enter: 'a' for audio or 'v' for video download \n >>")).strip()
     if audio_or_video != 'a' and audio_or_video != 'v':
         print("bad input")
         starter()
