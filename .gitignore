@@ -10,7 +10,8 @@ Spotify_Application.info
 test.py
 testB.py
 
+.Pylint/
 Modules/
-ListModules.py
+list_modules.py
 
 
