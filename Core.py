@@ -20,13 +20,14 @@ import subprocess
 import re
 from threading import Thread
 from subprocess import PIPE
+from typing import List
 
 ##UI
 from tkinter import filedialog
 
 
 ##helper
-def read_file(file_path):
+def read_file(file_path) -> List[str]:
     with open(file_path, "r", encoding="utf8") as file:
         txt_lines = file.readlines()
 
@@ -36,7 +37,7 @@ def read_file(file_path):
     return txt_lines
 
 
-def stamp_to_seconds(timestr):
+def stamp_to_seconds(timestr) -> int:
     seconds = 0
     for part in timestr.split(":"):
         seconds = seconds * 60 + int(part, 10)
@@ -44,7 +45,7 @@ def stamp_to_seconds(timestr):
 
 
 ##funcs
-def main_downloader(audio_or_video):
+def main_downloader(audio_or_video) -> None:
     global url_string
     global playlist
     global destination
@@ -63,7 +64,7 @@ def main_downloader(audio_or_video):
         re.IGNORECASE,
     )
 
-    def create_downloader_code(url_string_list):
+    def create_downloader_code(url_string_list) -> None:
         global playlist
         global destination
         global playlistsettings
@@ -81,7 +82,7 @@ def main_downloader(audio_or_video):
 
         print("set download code")
 
-        def thread_code_writer(url_string):
+        def thread_code_writer(url_string) -> str:
             global playlist
             global destination
             global playlistsettings
@@ -105,6 +106,7 @@ def main_downloader(audio_or_video):
                 code_txt += f'yt-dlp -x {playlist} {playlistsettings} --audio-quality 192 --audio-format {audio_format} --add-metadata -o "{destination}{filename}" {url_string}{sperator}'
             elif audio_or_video == "v":
                 # yt-dlp can'thread recognize webm as format it is just standard so needed to differ
+                v_format = ""
                 if video_format != "webm":
                     v_format = f"--format {video_format}"
 
@@ -124,14 +126,14 @@ def main_downloader(audio_or_video):
 
         return code_txt[:-1]
 
-    def check_spotify_in_yt_music(song_list):
+    def check_spotify_in_yt_music(song_list) -> List[str]:
         global missed_songs
 
         url_list = []
         missed_songs = []
         limit = 10
 
-        def thread_yt__music_search(i):
+        def thread_yt__music_search(i) -> None:
             song_title = song_list[i][0]
             song_interpret = song_list[i][1]
             song_duration = (
@@ -233,7 +235,7 @@ def main_downloader(audio_or_video):
         print(url_list)
         return url_list
 
-    def main():
+    def main() -> None:
         global url_string
         global playlist
         global destination
@@ -426,6 +428,7 @@ def main_downloader(audio_or_video):
             global video_format
 
             def set_video_format():
+                global video_format
                 video_format = input(" Use: mp4, webm, 3gp \n  >>").strip()
 
                 chars_to_check = ["mp4", "webm", "3gp"]
@@ -508,7 +511,7 @@ def main_downloader(audio_or_video):
     main()
 
 
-def starter():
+def starter() -> None:
     audio_or_video = str(
         input("Enter: 'a' for audio or 'v' for video download \n >>")
     ).strip()
