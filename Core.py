@@ -108,7 +108,7 @@ def main_downloader(audio_or_video) -> None:
                 # yt-dlp can'thread recognize webm as format it is just standard so needed to differ
                 v_format = ""
                 if video_format != "webm":
-                    v_format = f"--format {video_format}"
+                    v_format = f"--merge-output-format {video_format}"
 
                 code_txt += f'yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings} {v_format} --add-metadata  -o "{destination}%(title)s.f%(format_id)s.%(ext)s" {url_string}{sperator}'
 
