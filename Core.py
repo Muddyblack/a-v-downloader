@@ -110,7 +110,7 @@ def main_downloader(audio_or_video) -> None:
                 if video_format != "webm":
                     v_format = f"--merge-output-format {video_format}"
 
-                code_txt += f'yt-dlp -f bestvideo+bestaudio {playlist} {playlistsettings} {v_format} --add-metadata  -o "{destination}%(title)s.f%(format_id)s.%(ext)s" {url_string}{sperator}'
+                code_txt += f'yt-dlp -f bestvideo+bestaudio[ext=m4a]/bestvideo+bestaudio[acodec=opus]/bestvideo+bestaudio[acodec=aac] {playlist} {playlistsettings} {v_format} --add-metadata  -o "{destination}%(title)s.f%(format_id)s.%(ext)s" {url_string}{sperator}'
 
         threads = []
 
