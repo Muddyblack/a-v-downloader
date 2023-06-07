@@ -64,7 +64,7 @@ def main_downloader(audio_or_video) -> None:
         re.IGNORECASE,
     )
 
-    def create_downloader_code(url_string_list) -> None:
+    def create_downloader_code(url_string_list) -> str:
         global playlist
         global destination
         global playlistsettings
@@ -108,7 +108,7 @@ def main_downloader(audio_or_video) -> None:
                 # yt-dlp can'thread recognize webm as format it is just standard so needed to differ
                 v_format = ""
                 if video_format != "webm":
-                    v_format = f"--merge-output-format {video_format}"
+                    v_format = f"--merge-output-format {video_format} "
 
                 code_txt += f'yt-dlp -f bestvideo+bestaudio[ext=m4a]/bestvideo+bestaudio[acodec=opus]/bestvideo+bestaudio[acodec=aac] {playlist} {playlistsettings} {v_format} --add-metadata  -o "{destination}%(title)s.f%(format_id)s.%(ext)s" {url_string}{sperator}'
 
@@ -364,7 +364,7 @@ def main_downloader(audio_or_video) -> None:
             def d_t():
                 subprocess.call(code_list, creationflags=subprocess.CREATE_NEW_CONSOLE)
 
-            thread = Thread(daemon=True, target=d_t())
+            thread = Thread(daemon=True, target=d_t)
             thread.start()
         else:
             print("There might be a problem with the link!")
